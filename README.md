@@ -105,11 +105,10 @@ npm run demo "What is 15 * 7 using the calculator?"
 -- Query all trajectory events for a session
 SELECT
   Timestamp,
+  LogAttributes['session.id'] as session,
   LogAttributes['role'] as role,
   LogAttributes['content'] as content,
-  LogAttributes['session.id'] as session_id,
-  LogAttributes['tool.call_id'] as tool_call_id,
-  LogAttributes['tool.name'] as tool_name,
+  LogAttributes['tool.name'] as tool,
   LogAttributes['tool.input'] as tool_input,
   LogAttributes['tool.result'] as tool_result
 FROM otel_logs
@@ -158,3 +157,81 @@ Sample CSV export: [sample_hyperdx_search_results.csv](sample_hyperdx_search_res
 | 2026-01-28T07:54:59Z | user      | What is 15 \* 7 using the calculator?             | 10d6a324-... |
 | 2026-01-28T07:55:02Z | tool      | {"result":105,"expression":"15 multiply 7 = 105"} | 10d6a324-... |
 | 2026-01-28T07:55:05Z | assistant | 15 × 7 = **105**                                  | 10d6a324-... |
+
+## Fetching Session Logs
+
+The `fetch-session.ts` script fetches logs for a session directly from ClickHouse and saves them to a text file. This bypasses the HyperDX UI and provides a clean, readable format.
+
+```bash
+# Using session ID prefix
+npm run fetch 54d5f26c
+
+# Using full session ID
+npx tsx fetch-session.ts 54d5f26c-2621-4dcf-aa23-1f7cf8a9f627
+```
+
+Output is saved to `session-{id-prefix}.txt` with formatted messages:
+
+```
+Session: 54d5f26c-2621-4dcf-aa23-1f7cf8a9f627
+Messages: 4
+Fetched at: 2026-01-28T15:11:41.036Z
+
+================================================================================
+[2026-01-28T06:40:28.802Z] USER
+================================================================================
+List all available video sources...
+
+================================================================================
+[2026-01-28T06:40:37.017Z] TOOL
+================================================================================
+Tool: Bash
+
+Input:
+{
+  "command": "./cli list sources",
+  "description": "List all available video sources"
+}
+
+Result:
+Sources (5 total):
+...
+
+================================================================================
+[2026-01-28T06:40:52.273Z] ASSISTANT
+================================================================================
+## Available Video Sources
+...
+```
+
+## Known Issues
+
+### HyperDX UI Detail View Bug
+
+When clicking on a log row to expand the detail view, the content may appear empty even though the data exists in ClickHouse. This affects some message types (particularly assistant responses).
+
+**Workaround:** Use the `fetch-session.ts` script to export session logs directly from ClickHouse.
+
+**Related issue:** https://github.com/hyperdxio/hyperdx/issues/1139
+
+### ClickHouse Memory Limits
+
+The ClickStack all-in-one container may run out of memory during background merge operations, causing ClickHouse to crash. Symptoms:
+
+- `clickhouse-client` returns `Connection refused (localhost:9000)`
+- Error in `/var/log/clickhouse-server/clickhouse-server.err.log`:
+  ```
+  memory limit exceeded: would use 1.74 GiB, maximum: 1.73 GiB
+  ```
+
+**Fix:** Restart the container:
+
+```bash
+# Find the container ID
+docker ps
+
+# Restart it
+docker restart <container-id>
+```
+
+**Prevention:** Run Docker with more memory allocated, or use a separate ClickHouse instance with appropriate memory settings.

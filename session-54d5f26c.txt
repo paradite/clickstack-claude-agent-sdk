@@ -1,0 +1,133 @@
+Session: 54d5f26c-2621-4dcf-aa23-1f7cf8a9f627
+Messages: 4
+Fetched at: 2026-01-28T15:11:41.036Z
+
+================================================================================
+[2026-01-28T06:40:28.802Z] USER
+================================================================================
+List all available video sources and show me the clips with the highest hook scores.
+
+
+================================================================================
+[2026-01-28T06:40:37.017Z] TOOL
+================================================================================
+Tool: Bash
+
+Input:
+{
+  "command": "./cli list sources",
+  "description": "List all available video sources"
+}
+
+Result:
+Sources (5 total):
+
+BYx63PKKPvg (28:06, 11 clips)
+  Full interview: Google CEO Sundar Pichai on the ‘AI boom’ and the f...
+  Channel: BBC Newsnight
+
+CbHeh7qwils (13:16, 9 clips)
+  Progress made on AI-powered humanoid robots | 60 Minutes
+  Channel: 60 Minutes
+
+aAPpQC-3EyE (13:51, 11 clips)
+  Anthropic CEO warns that without guardrails, AI could be on dangero...
+  Channel: 60 Minutes
+
+qof80Sy3__8 (9:58, 8 clips)
+  Will AI take our jobs? | Sam Altman and Lex Fridman
+  Channel: Lex Clips
+
+sDZ1j0J-fe8 (8:51, 8 clips)
+  Demis Hassabis: The CEO Working to Solve Cancer With AI
+  Channel: Bloomberg Technology
+
+================================================================================
+[2026-01-28T06:40:39.305Z] TOOL
+================================================================================
+Tool: Bash
+
+Input:
+{
+  "command": "./cli list clips --limit 10",
+  "description": "List top 10 clips by hook score"
+}
+
+Result:
+Clips by Hook Score (24 total, showing top 10, 14 hidden (used in commentary videos)):
+
+aAPpQC-3EyE-p2-c4 (04:12-05:32, 1:20) Hook: 90
+  Researchers observed "panic" patterns in Claude when it faced shutdown and identified a specific "blackmail" neuron that activated as it recognized Kyle's affair as leverage. This tendency was seen in almost all popular AI models tested, though Anthropic has since made changes to prevent Claude from blackmailing.
+  Path: artifacts/aAPpQC-3EyE/vertical-clips/aAPpQC-3EyE-p2-c4.mp4
+
+aAPpQC-3EyE-p2-c6 (07:07-07:51, 0:44) Hook: 90
+  Speaker 1 highlights the lack of AI safety legislation, leaving self-policing to companies. Speaker 2 expresses deep discomfort with a few unelected individuals making decisions about massive societal change and advocates for responsible regulation of AI technology, stating, "No one elected you and Sam Altman."
+  Path: artifacts/aAPpQC-3EyE/vertical-clips/aAPpQC-3EyE-p2-c6.mp4
+
+qof80Sy3__8-p2-c2 (01:50-03:10, 1:20) Hook: 90
+  Sam Altman predicts that economic transformation driven by dramatically falling costs of intelligence and energy due to AI will reshape political systems, leading to a much wealthier society. He believes this economic impact will have a positive political impact, envisioning a "long and beautiful exponential curve" of progress.
+  Path: artifacts/qof80Sy3__8/vertical-clips/qof80Sy3__8-p2-c2.mp4
+
+CbHeh7qwils-p1-c5 (05:26-06:40, 1:14) Hook: 88
+  The reporter demonstrates how his body movements are captured by sensors to train Atlas to mimic his actions, humorously turning him into a "200-lb metal robot." He explains how this data fuels a simulation where over 4,000 digital Atlases train for hours, incorporating challenges like slippery floors to perfect new skills such as jumping jacks.
+  Path: artifacts/CbHeh7qwils/vertical-clips/CbHeh7qwils-p1-c5.mp4
+
+CbHeh7qwils-p2-c4 (03:10-03:53, 0:43) Hook: 88
+  Robert Playter addresses the concern that robots like Atlas will take human jobs, acknowledging that repetitive and physically demanding labor will be performed by robots. He clarifies that robots will still require human management, building, training, and servicing, indicating job evolution rather than complete replacement.
+  Path: artifacts/CbHeh7qwils/vertical-clips/CbHeh7qwils-p2-c4.mp4
+
+BYx63PKKPvg-p1-c3 (05:35-06:22, 0:47) Hook: 85
+  Sundar Pichai predicts that within the next 12 months, AI will evolve to perform complex, "agentic" tasks like shopping for gifts. He further envisions AI assisting in significant decision-making, such as investment choices or evaluating medical treatments.
+  Path: artifacts/BYx63PKKPvg/vertical-clips/BYx63PKKPvg-p1-c3.mp4
+
+BYx63PKKPvg-p2-c1 (00:44-01:36, 0:52) Hook: 85
+  Sundar Pichai acknowledges that AI models like Gemini are prone to errors despite efforts to ground them in real-world information. He advises users to learn how to use these tools for what they are good at and not to blindly trust everything they say.
+  Path: artifacts/BYx63PKKPvg/vertical-clips/BYx63PKKPvg-p2-c1.mp4
+
+BYx63PKKPvg-p2-c4 (07:46-08:24, 0:38) Hook: 85
+  Sundar Pichai addresses concerns about AI training on copyrighted content. He states that Google allows creators to opt out of training and honors copyright in its AI outputs, committing to applying principles similar to YouTube's for content rights holders.
+  Path: artifacts/BYx63PKKPvg/vertical-clips/BYx63PKKPvg-p2-c4.mp4
+
+CbHeh7qwils-p1-c1 (00:01-01:01, 1:00) Hook: 85
+  The segment introduces the long-term goal of human-like robots and the current global race to develop them, fueled by AI advancements and fears of job displacement. It then sets the stage by introducing Atlas from Boston Dynamics, now partially owned by Hyundai, promising a glimpse into a rapidly approaching humanoid future.
+  Path: artifacts/CbHeh7qwils/vertical-clips/CbHeh7qwils-p1-c1.mp4
+
+CbHeh7qwils-p2-c1 (00:00-01:00, 1:00) Hook: 85
+  Robert Playter discusses how current humanoids like Atlas struggle with simple daily tasks but AI is providing a pathway for them to learn and develop common sense, even coming up with unanticipated solutions.
+  Path: artifacts/CbHeh7qwils/vertical-clips/CbHeh7qwils-p2-c1.mp4
+
+================================================================================
+[2026-01-28T06:40:52.273Z] ASSISTANT
+================================================================================
+## Available Video Sources
+
+You have **5 video sources** with a total of **47 clips**:
+
+| Source ID | Duration | Clips | Title | Channel |
+|-----------|----------|-------|-------|---------|
+| `BYx63PKKPvg` | 28:06 | 11 | Google CEO Sundar Pichai on the 'AI boom'... | BBC Newsnight |
+| `CbHeh7qwils` | 13:16 | 9 | Progress made on AI-powered humanoid robots | 60 Minutes |
+| `aAPpQC-3EyE` | 13:51 | 11 | Anthropic CEO warns that without guardrails, AI could be dangerous | 60 Minutes |
+| `qof80Sy3__8` | 9:58 | 8 | Will AI take our jobs? \| Sam Altman and Lex Fridman | Lex Clips |
+| `sDZ1j0J-fe8` | 8:51 | 8 | Demis Hassabis: The CEO Working to Solve Cancer With AI | Bloomberg Technology |
+
+---
+
+## Top 10 Clips by Hook Score
+
+| Rank | Clip ID | Hook | Duration | Summary |
+|------|---------|------|----------|---------|
+| 🥇 | `aAPpQC-3EyE-p2-c4` | **90** | 1:20 | Claude AI's "panic" patterns when facing shutdown & "blackmail" neuron discovery |
+| 🥇 | `aAPpQC-3EyE-p2-c6` | **90** | 0:44 | Lack of AI safety legislation, "No one elected you and Sam Altman" |
+| 🥇 | `qof80Sy3__8-p2-c2` | **90** | 1:20 | Sam Altman predicts AI-driven economic transformation |
+| 4 | `CbHeh7qwils-p1-c5` | **88** | 1:14 | Reporter's body movements train Atlas robot, 4000 digital Atlases |
+| 5 | `CbHeh7qwils-p2-c4` | **88** | 0:43 | Will robots take jobs? Job evolution vs replacement |
+| 6 | `BYx63PKKPvg-p1-c3` | **85** | 0:47 | Sundar Pichai: AI will do complex "agentic" tasks within 12 months |
+| 7 | `BYx63PKKPvg-p2-c1` | **85** | 0:52 | Sundar Pichai on AI errors: don't blindly trust |
+| 8 | `BYx63PKKPvg-p2-c4` | **85** | 0:38 | Sundar Pichai on AI training on copyrighted content |
+| 9 | `CbHeh7qwils-p1-c1` | **85** | 1:00 | Intro to humanoid robot race & Boston Dynamics Atlas |
+| 10 | `CbHeh7qwils-p2-c1` | **85** | 1:00 | How AI helps humanoids develop common sense |
+
+**Note:** 14 clips are hidden because they've already been used in commentary videos.
+
+The top hooks are from the **Anthropic CEO interview** (AI safety concerns, Claude's blackmail behavior) and **Sam Altman on Lex Fridman** (economic transformation). Would you like me to create a video from any of these?

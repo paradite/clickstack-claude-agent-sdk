@@ -4,7 +4,8 @@
   "description": "Tracing and logging full agent trajectory (prompt, response, tool calls and tool call results) for Claude Agent SDK using ClickStack",
   "main": "index.js",
   "scripts": {
-    "demo": "npx tsx demo-agent.ts"
+    "demo": "npx tsx demo-agent.ts",
+    "fetch": "npx tsx fetch-session.ts"
   },
   "keywords": [],
   "author": "",
