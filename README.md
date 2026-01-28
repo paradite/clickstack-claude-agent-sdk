@@ -204,13 +204,55 @@ Sources (5 total):
 ...
 ```
 
+## Telescope (Recommended Log Viewer)
+
+Telescope is a web log viewer for ClickHouse that properly supports Map fields (unlike HyperDX which has issues with detail views).
+
+### Setup
+
+1. Make sure ClickStack is running with port 8123 exposed:
+
+```bash
+./run.sh
+```
+
+2. Run Telescope:
+
+```bash
+./run-telescope.sh
+```
+
+3. Open http://localhost:9898/setup and create a superuser account
+
+4. Add ClickHouse connection:
+   - **Host**: `host.docker.internal` (Docker on Mac/Windows) or `172.17.0.1` (Docker on Linux)
+   - **Port**: `8123`
+   - **User**: `api`
+   - **Password**: `api`
+
+5. Create a source pointing to the `otel_logs` table with these field mappings:
+
+   | Setting | Value |
+   |---------|-------|
+   | **Database** | `default` |
+   | **Table** | `otel_logs` |
+   | **Time field** | `Timestamp` |
+   | **Severity field** | `SeverityText` |
+   | **Default chosen fields** | `Body`, `ServiceName`, `LogAttributes` |
+
+### Ports
+
+| Service    | Port |
+| ---------- | ---- |
+| Telescope  | 9898 |
+| ClickHouse | 8123 |
+
 ## Alternative UIs for ClickHouse Logs
 
-If you encounter issues with the HyperDX UI or prefer a different interface, here are alternatives for viewing logs stored in ClickHouse:
+If you prefer a different interface, here are other alternatives:
 
 ### Dedicated Log Viewers
 
-- **[Telescope](https://github.com/iamtelescope/telescope)** - Web log viewer for ClickHouse. Supports Map fields. **Recommended.**
 - **[ClickVisual](https://github.com/clickvisual/clickvisual)** - Log query and analysis platform.
 
 ### Full Observability Platforms
@@ -237,6 +279,46 @@ Tabix can connect directly to ClickHouse without additional setup:
 4. Query the `otel_logs` table directly
 
 ## Known Issues
+
+### Telescope Source Creation Bug
+
+When creating a source in Telescope, you may get the error:
+
+```
+failed to create source: NOT NULL constraint failed: telescope_source.execute_query_on_open
+```
+
+**Fix:** Run this command to add a default value to the database:
+
+```bash
+sqlite3 ~/.telescope/db.sqlite3 <<'EOF'
+CREATE TABLE IF NOT EXISTS "telescope_source_new" (
+  "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "kind" varchar(32) NOT NULL,
+  "slug" varchar(64) NOT NULL UNIQUE,
+  "name" varchar(64) NOT NULL,
+  "description" text NOT NULL,
+  "time_field" varchar(128) NOT NULL,
+  "uniq_field" varchar(128) NOT NULL,
+  "severity_field" varchar(128) NOT NULL,
+  "fields" text NOT NULL CHECK ((JSON_VALID("fields") OR "fields" IS NULL)),
+  "modifiers" text NOT NULL CHECK ((JSON_VALID("modifiers") OR "modifiers" IS NULL)),
+  "default_chosen_fields" text NOT NULL CHECK ((JSON_VALID("default_chosen_fields") OR "default_chosen_fields" IS NULL)),
+  "context_fields" text NOT NULL CHECK ((JSON_VALID("context_fields") OR "context_fields" IS NULL)),
+  "support_raw_query" bool NOT NULL,
+  "date_field" varchar(128) NOT NULL,
+  "data" text NOT NULL CHECK ((JSON_VALID("data") OR "data" IS NULL)),
+  "conn_id" bigint NULL REFERENCES "telescope_connection" ("id") DEFERRABLE INITIALLY DEFERRED,
+  "execute_query_on_open" bool NOT NULL DEFAULT 1
+);
+INSERT INTO telescope_source_new SELECT * FROM telescope_source;
+DROP TABLE telescope_source;
+ALTER TABLE telescope_source_new RENAME TO telescope_source;
+CREATE INDEX "telescope_source_conn_id_16256fe0" ON "telescope_source" ("conn_id");
+EOF
+```
+
+Then restart Telescope.
 
 ### HyperDX UI Detail View Bug
 

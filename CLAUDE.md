@@ -22,6 +22,9 @@ npm run demo "Your prompt here"
 
 # Start ClickStack (ClickHouse + OTEL collector)
 ./run.sh
+
+# Start Telescope log viewer (alternative to HyperDX)
+./run-telescope.sh
 ```
 
 ## Architecture
@@ -50,9 +53,13 @@ npm run demo "Your prompt here"
 ## Infrastructure
 
 ClickStack runs via Docker (`run.sh`):
-- Port 8080: ClickHouse UI/HTTP
+- Port 8080: HyperDX UI
+- Port 8123: ClickHouse HTTP (for Telescope)
 - Port 4317: OTLP gRPC (logs)
 - Port 4318: OTLP HTTP (metrics)
+
+Telescope runs via Docker (`run-telescope.sh`):
+- Port 9898: Telescope UI
 
 Logs stored in ClickHouse table `default.otel_logs` with 30-day TTL (schema in `otel_logs_schema.sql`).
 
