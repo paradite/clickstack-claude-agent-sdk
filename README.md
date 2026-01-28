@@ -171,11 +171,11 @@ Full details stored in log attributes:
 
 Sample CSV export: [docs/sample_hyperdx_search_results.csv](docs/sample_hyperdx_search_results.csv)
 
-| Timestamp            | Role      | Content                                           | Session ID   |
-| -------------------- | --------- | ------------------------------------------------- | ------------ |
-| 2026-01-28T07:54:59Z | user      | What is 15 \* 7 using the calculator?             | 10d6a324-... |
-| 2026-01-28T07:55:02Z | tool      | {"result":105,"expression":"15 multiply 7 = 105"} | 10d6a324-... |
-| 2026-01-28T07:55:05Z | assistant | 15 × 7 = **105**                                  | 10d6a324-... |
+| Timestamp            | Body                                                                      | Role      | Session ID   |
+| -------------------- | ------------------------------------------------------------------------- | --------- | ------------ |
+| 2026-01-28T07:54:59Z | `[USER] What is 15 * 7 using the calculator?`                             | user      | 10d6a324-... |
+| 2026-01-28T07:55:02Z | `[TOOL] calculator \| Input: {"a":15,"b":7} \| Result: {"result":105}`    | tool      | 10d6a324-... |
+| 2026-01-28T07:55:05Z | `[ASSISTANT] 15 × 7 = **105**`                                            | assistant | 10d6a324-... |
 
 ## Fetching Session Logs
 
