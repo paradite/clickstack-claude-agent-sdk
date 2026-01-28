@@ -1,0 +1,52 @@
+## Setting up ClickStack
+
+Docs: https://clickhouse.com/docs/use-cases/observability/clickstack/getting-started
+
+```bash
+docker run \
+  -p 8080:8080 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -v "$(pwd)/.volumes/db:/data/db" \
+  -v "$(pwd)/.volumes/ch_data:/var/lib/clickhouse" \
+  -v "$(pwd)/.volumes/ch_logs:/var/log/clickhouse-server" \
+  clickhouse/clickstack-all-in-one:latest
+```
+
+## Claude Code config
+
+Docs: https://code.claude.com/docs/en/monitoring-usage
+
+```bash
+# 1. Enable telemetry
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+
+# 2. Choose exporters (both are optional - configure only what you need)
+export OTEL_METRICS_EXPORTER=otlp       # Options: otlp, prometheus, console
+export OTEL_LOGS_EXPORTER=otlp          # Options: otlp, console
+
+# 3. Configure OTLP endpoint (for OTLP exporter)
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+
+# 4. Set authentication (if required)
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-token"
+
+# 5. For debugging: reduce export intervals
+export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10 seconds (default: 60000ms)
+export OTEL_LOGS_EXPORT_INTERVAL=5000     # 5 seconds (default: 5000ms)
+
+# 6. Run Claude Code
+claude
+```
+
+Missing fields:
+
+- Prompt
+- Response
+- Tool call results
+
+Potential solutions:
+
+- https://github.com/badlogic/lemmy/tree/main/apps/claude-trace
+- https://github.com/ljw1004/claude-log
