@@ -1,0 +1,23 @@
+{
+  "name": "clickstack",
+  "version": "1.0.0",
+  "description": "Docs: https://clickhouse.com/docs/use-cases/observability/clickstack/getting-started",
+  "main": "index.js",
+  "scripts": {
+    "demo": "npx tsx demo-agent.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.22",
+    "@opentelemetry/api-logs": "^0.211.0",
+    "@opentelemetry/exporter-logs-otlp-grpc": "^0.211.0",
+    "@opentelemetry/resources": "^2.5.0",
+    "@opentelemetry/sdk-logs": "^0.211.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

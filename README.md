@@ -41,13 +41,41 @@ export OTEL_LOG_USER_PROMPTS=1
 claude
 ```
 
-Missing fields:
+## Logging User Prompts with Claude Agent SDK
 
-- Prompt
+Claude Code's built-in telemetry doesn't include user prompt content. See `demo-agent.ts` for how to add custom OpenTelemetry logging to capture prompts.
+
+Config is in `.env.local` (copy from `.env.example` if needed).
+
+```bash
+# Install dependencies
+npm install
+
+# Run the demo agent (with ClickStack running)
+npm run demo "What is 2+2?"
+```
+
+### Querying in ClickHouse
+
+```sql
+SELECT
+  Timestamp,
+  ServiceName,
+  Body,
+  LogAttributes['prompt.content'] as prompt_content,
+  LogAttributes['session.id'] as session_id
+FROM otel_logs
+WHERE Body = 'user_prompt'
+ORDER BY Timestamp DESC;
+```
+
+## Missing fields (from Claude Code built-in telemetry)
+
+- ~~Prompt~~ ✅ Captured via demo-agent.ts
 - Response
 - Tool call results
 
-Potential solutions:
+Potential solutions for remaining fields:
 
 - https://github.com/badlogic/lemmy/tree/main/apps/claude-trace
 - https://github.com/ljw1004/claude-log
