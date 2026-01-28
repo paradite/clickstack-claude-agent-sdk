@@ -204,6 +204,38 @@ Sources (5 total):
 ...
 ```
 
+## Alternative UIs for ClickHouse Logs
+
+If you encounter issues with the HyperDX UI or prefer a different interface, here are alternatives for viewing logs stored in ClickHouse:
+
+### Dedicated Log Viewers
+
+- **[Telescope](https://github.com/iamtelescope/telescope)** - Web log viewer for ClickHouse. Supports Map fields. **Recommended.**
+- **[ClickVisual](https://github.com/clickvisual/clickvisual)** - Log query and analysis platform.
+
+### Full Observability Platforms
+
+- **[SigNoz](https://signoz.io/)** - Open-source APM with logs/traces/metrics. Datadog alternative.
+- **[Uptrace](https://uptrace.dev/)** - OpenTelemetry-native APM. Supports OTLP directly.
+
+### General Database GUIs
+
+- **[Tabix](https://tabix.io/)** - Web-based SQL editor. No installation needed.
+- **[Beekeeper Studio](https://www.beekeeperstudio.io/)** - Cross-platform desktop GUI.
+- **[DBeaver](https://dbeaver.io/)** - Universal database tool.
+
+### Quick Start with Tabix
+
+Tabix can connect directly to ClickHouse without additional setup:
+
+1. Expose ClickHouse HTTP port when running ClickStack:
+   ```bash
+   docker run -p 8080:8080 -p 4317:4317 -p 4318:4318 -p 8123:8123 ...
+   ```
+2. Open https://tabix.io/
+3. Connect to `http://localhost:8123`
+4. Query the `otel_logs` table directly
+
 ## Known Issues
 
 ### HyperDX UI Detail View Bug
