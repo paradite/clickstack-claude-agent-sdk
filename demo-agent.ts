@@ -48,6 +48,7 @@ function initTelemetryLogger() {
     [ATTR_SERVICE_NAME]: SERVICE_NAME,
   });
 
+  // OTLPLogExporter picks up endpoint and headers from env vars
   const logExporter = new OTLPLogExporter();
   const loggerProvider = new LoggerProvider({
     resource,
@@ -130,9 +131,9 @@ async function runAgent(userPrompt: string) {
 const prompt = process.argv[2];
 
 if (!prompt) {
-  console.log("Usage: CLAUDE_CODE_ENABLE_TELEMETRY=1 npx tsx demo-agent.ts \"Your prompt\"");
+  console.log("Usage: npx tsx demo-agent.ts \"Your prompt\"");
   console.log("\nExample:");
-  console.log("  CLAUDE_CODE_ENABLE_TELEMETRY=1 npx tsx demo-agent.ts \"What is 2+2?\"");
+  console.log("  npx tsx demo-agent.ts \"What is 2+2?\"");
   process.exit(1);
 }
 

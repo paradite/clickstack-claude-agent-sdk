@@ -45,7 +45,10 @@ claude
 
 Claude Code's built-in telemetry doesn't include user prompt content. See `demo-agent.ts` for how to add custom OpenTelemetry logging to capture prompts.
 
-Config is in `.env.local` (copy from `.env.example` if needed).
+### Setup
+
+1. Copy `.env.example` to `.env.local`
+2. Set `OTEL_EXPORTER_OTLP_HEADERS` with your auth token (required for logs to be accepted)
 
 ```bash
 # Install dependencies
@@ -54,6 +57,13 @@ npm install
 # Run the demo agent (with ClickStack running)
 npm run demo "What is 2+2?"
 ```
+
+### Key implementation details
+
+- Uses `@opentelemetry/exporter-logs-otlp-grpc` to send logs via gRPC to port 4317
+- `OTEL_EXPORTER_OTLP_HEADERS` must be set for authentication
+- `SimpleLogRecordProcessor` sends logs immediately (no flush needed)
+- Logs include `prompt.content` and `session.id` attributes for correlation
 
 ### Querying in ClickHouse
 
