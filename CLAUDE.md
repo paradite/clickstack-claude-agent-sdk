@@ -63,7 +63,7 @@ ClickStack runs via Docker (`run.sh`):
 Telescope runs via Docker (`run-telescope.sh`):
 - Port 9898: Telescope UI
 
-Logs stored in ClickHouse table `default.otel_logs` with 30-day TTL (schema in `otel_logs_schema.sql`).
+Logs stored in ClickHouse table `default.otel_logs` with 30-day TTL (schema in `docs/otel_logs_schema.sql`).
 
 ## Setup
 

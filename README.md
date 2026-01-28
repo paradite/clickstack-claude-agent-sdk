@@ -5,10 +5,10 @@ Full trajectory tracing for Claude Agent SDK applications based on OpenTelemetry
 ## Screenshots
 
 _Telescope_
-![Telescope](sample_screenshot_telescope.png)
+![Telescope](docs/sample_screenshot_telescope.png)
 
 _HyperDX_
-![HyperDX](sample_screenshot_hyperdx.png)
+![HyperDX](docs/sample_screenshot_hyperdx.png)
 
 ## Architecture
 
@@ -169,7 +169,7 @@ Full details stored in log attributes:
 
 ## Sample Data
 
-Sample CSV export: [sample_hyperdx_search_results.csv](sample_hyperdx_search_results.csv)
+Sample CSV export: [docs/sample_hyperdx_search_results.csv](docs/sample_hyperdx_search_results.csv)
 
 | Timestamp            | Role      | Content                                           | Session ID   |
 | -------------------- | --------- | ------------------------------------------------- | ------------ |
