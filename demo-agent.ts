@@ -77,6 +77,51 @@ interface ToolAttributes {
 }
 
 /**
+ * Truncate a string to a maximum length, adding ellipsis if truncated
+ */
+function truncate(str: string, maxLength: number = 200): string {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength) + "...";
+}
+
+/**
+ * Safely stringify and truncate JSON
+ */
+function truncateJson(obj: unknown, maxLength: number = 100): string {
+  try {
+    const json = JSON.stringify(obj);
+    return truncate(json, maxLength);
+  } catch {
+    return "[unserializable]";
+  }
+}
+
+/**
+ * Generate a human-readable body summary for log viewing
+ */
+function generateLogBody(
+  role: MessageRole,
+  content: string,
+  toolAttrs?: ToolAttributes
+): string {
+  switch (role) {
+    case "user":
+      return `[USER] ${truncate(content, 300)}`;
+    case "assistant":
+      return `[ASSISTANT] ${truncate(content, 300)}`;
+    case "tool":
+      if (toolAttrs) {
+        const input = truncateJson(toolAttrs.input, 150);
+        const result = truncateJson(toolAttrs.result, 150);
+        return `[TOOL] ${toolAttrs.name} | Input: ${input} | Result: ${result}`;
+      }
+      return `[TOOL] ${truncate(content, 300)}`;
+    default:
+      return truncate(content, 300);
+  }
+}
+
+/**
  * Log a message to OpenTelemetry with unified schema
  */
 function logMessage(
@@ -87,10 +132,12 @@ function logMessage(
 ): void {
   if (!telemetryLogger) return;
 
+  const body = generateLogBody(role, content, toolAttrs);
+
   telemetryLogger.emit({
     severityNumber: SeverityNumber.INFO,
     severityText: "INFO",
-    body: "message",
+    body,
     attributes: {
       role,
       content,

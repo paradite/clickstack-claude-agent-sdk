@@ -41,6 +41,8 @@ npm run demo "Your prompt here"
 - Telemetry opt-in via `CLAUDE_CODE_ENABLE_TELEMETRY` flag
 - `SimpleLogRecordProcessor` for synchronous (unbuffered) log sending
 - Session IDs correlate all trajectory events
+- Human-readable `body` field with standardized format: `[USER]`, `[ASSISTANT]`, `[TOOL] name | Input: ... | Result: ...`
+- Content truncated in body (300 chars for messages, 150 chars for JSON) to prevent log overflow
 
 ## Tech Stack
 

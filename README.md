@@ -2,7 +2,13 @@
 
 Full trajectory tracing for Claude Agent SDK applications based on OpenTelemetry and ClickStack. Captures prompts, responses, and tool calls that are missing from Claude Code's built-in telemetry.
 
-![Sample Screenshot](sample_screenshot.png)
+## Screenshots
+
+_Telescope_
+![Telescope](sample_screenshot_telescope.png)
+
+_HyperDX_
+![HyperDX](sample_screenshot_hyperdx.png)
 
 ## Architecture
 
@@ -97,7 +103,8 @@ npm run demo "What is 15 * 7 using the calculator?"
 - `OTEL_EXPORTER_OTLP_HEADERS` must be set for authentication
 - `SimpleLogRecordProcessor` sends logs immediately (no flush needed)
 - All logs include `session.id` for correlation
-- Unified event type: `message` with `role` attribute (user/assistant/tool)
+- Human-readable `body` field for easy viewing in log UIs (truncated to prevent overflow)
+- Full details in attributes for programmatic access
 
 ### Querying in ClickHouse
 
@@ -141,10 +148,22 @@ ORDER BY Timestamp DESC;
 
 ## Captured fields (not in Claude Code built-in telemetry)
 
-Unified `message` event with attributes:
+### Body field (for log viewer display)
+
+The `body` field contains a human-readable summary, truncated for display:
+
+| Role      | Body Format                                                            |
+| --------- | ---------------------------------------------------------------------- |
+| user      | `[USER] <message truncated to 300 chars>`                              |
+| assistant | `[ASSISTANT] <message truncated to 300 chars>`                         |
+| tool      | `[TOOL] <name> \| Input: <json 150 chars> \| Result: <json 150 chars>` |
+
+### Attributes (for programmatic access)
+
+Full details stored in log attributes:
 
 - `role` - `user`, `assistant`, or `tool`
-- `content` - message content
+- `content` - full message content (untruncated)
 - `session.id` - session ID for correlation
 - `tool.call_id`, `tool.name`, `tool.input`, `tool.result` - (tool role only)
 
@@ -204,7 +223,7 @@ Sources (5 total):
 ...
 ```
 
-## Telescope (Recommended Log Viewer)
+## Telescope (Alternative Log Viewer)
 
 Telescope is a web log viewer for ClickHouse that properly supports Map fields (unlike HyperDX which has issues with detail views).
 
@@ -232,12 +251,12 @@ Telescope is a web log viewer for ClickHouse that properly supports Map fields (
 
 5. Create a source pointing to the `otel_logs` table with these field mappings:
 
-   | Setting | Value |
-   |---------|-------|
-   | **Database** | `default` |
-   | **Table** | `otel_logs` |
-   | **Time field** | `Timestamp` |
-   | **Severity field** | `SeverityText` |
+   | Setting                   | Value                                  |
+   | ------------------------- | -------------------------------------- |
+   | **Database**              | `default`                              |
+   | **Table**                 | `otel_logs`                            |
+   | **Time field**            | `Timestamp`                            |
+   | **Severity field**        | `SeverityText`                         |
    | **Default chosen fields** | `Body`, `ServiceName`, `LogAttributes` |
 
 ### Ports
@@ -246,37 +265,6 @@ Telescope is a web log viewer for ClickHouse that properly supports Map fields (
 | ---------- | ---- |
 | Telescope  | 9898 |
 | ClickHouse | 8123 |
-
-## Alternative UIs for ClickHouse Logs
-
-If you prefer a different interface, here are other alternatives:
-
-### Dedicated Log Viewers
-
-- **[ClickVisual](https://github.com/clickvisual/clickvisual)** - Log query and analysis platform.
-
-### Full Observability Platforms
-
-- **[SigNoz](https://signoz.io/)** - Open-source APM with logs/traces/metrics. Datadog alternative.
-- **[Uptrace](https://uptrace.dev/)** - OpenTelemetry-native APM. Supports OTLP directly.
-
-### General Database GUIs
-
-- **[Tabix](https://tabix.io/)** - Web-based SQL editor. No installation needed.
-- **[Beekeeper Studio](https://www.beekeeperstudio.io/)** - Cross-platform desktop GUI.
-- **[DBeaver](https://dbeaver.io/)** - Universal database tool.
-
-### Quick Start with Tabix
-
-Tabix can connect directly to ClickHouse without additional setup:
-
-1. Expose ClickHouse HTTP port when running ClickStack:
-   ```bash
-   docker run -p 8080:8080 -p 4317:4317 -p 4318:4318 -p 8123:8123 ...
-   ```
-2. Open https://tabix.io/
-3. Connect to `http://localhost:8123`
-4. Query the `otel_logs` table directly
 
 ## Known Issues
 
