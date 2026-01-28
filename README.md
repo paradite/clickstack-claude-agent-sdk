@@ -1,6 +1,6 @@
-# ClickStack Claude Agent SDK
+# ClickStack + Claude Agent SDK
 
-Full trajectory tracing for Claude Agent SDK applications. Captures prompts, responses, and tool calls that are missing from Claude Code's built-in telemetry.
+Full trajectory tracing for Claude Agent SDK applications based on OpenTelemetry and ClickStack. Captures prompts, responses, and tool calls that are missing from Claude Code's built-in telemetry.
 
 ![Sample Screenshot](sample_screenshot.png)
 
@@ -38,6 +38,7 @@ Full trajectory tracing for Claude Agent SDK applications. Captures prompts, res
 ## What This Solves
 
 Claude Code's built-in OpenTelemetry integration doesn't capture:
+
 - User prompts
 - Agent responses
 - Tool call inputs and results
@@ -47,6 +48,7 @@ This project adds custom OpenTelemetry logging to capture the complete agent tra
 ## Setting up ClickStack
 
 ClickStack is an all-in-one observability stack with 3 components:
+
 - **ClickHouse** - Database for storing telemetry data
 - **OpenTelemetry Collector** - Receives OTLP data (port 4317 gRPC, 4318 HTTP)
 - **HyperDX** - UI for querying and visualizing data (port 8080)
