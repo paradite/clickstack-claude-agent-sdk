@@ -36,6 +36,7 @@ export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-token"
 export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10 seconds (default: 60000ms)
 export OTEL_LOGS_EXPORT_INTERVAL=5000     # 5 seconds (default: 5000ms)
 
+export OTEL_LOG_USER_PROMPTS=1
 # 6. Run Claude Code
 claude
 ```
