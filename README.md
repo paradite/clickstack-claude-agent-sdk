@@ -10,6 +10,47 @@ _Telescope_
 _HyperDX_
 ![HyperDX](docs/sample_screenshot_hyperdx.png)
 
+## What This Solves
+
+Claude Code's built-in OpenTelemetry integration doesn't capture:
+
+- User prompts
+- Agent responses
+- Tool call inputs and results
+
+This project adds custom OpenTelemetry logging to capture the complete agent trajectory, stored in ClickHouse via ClickStack.
+
+## Captured fields (not in Claude Code built-in telemetry)
+
+### Body field (for log viewer display)
+
+The `body` field contains a human-readable summary, truncated for display:
+
+| Role      | Body Format                                                            |
+| --------- | ---------------------------------------------------------------------- |
+| user      | `[USER] <message truncated to 300 chars>`                              |
+| assistant | `[ASSISTANT] <message truncated to 300 chars>`                         |
+| tool      | `[TOOL] <name> \| Input: <json 150 chars> \| Result: <json 150 chars>` |
+
+### Attributes (for programmatic access)
+
+Full details stored in log attributes:
+
+- `role` - `user`, `assistant`, or `tool`
+- `content` - full message content (untruncated)
+- `session.id` - session ID for correlation
+- `tool.call_id`, `tool.name`, `tool.input`, `tool.result` - (tool role only)
+
+## Sample Data
+
+Sample CSV export: [docs/sample_hyperdx_search_results.csv](docs/sample_hyperdx_search_results.csv)
+
+| Timestamp            | Body                                                                      | Role      | Session ID   |
+| -------------------- | ------------------------------------------------------------------------- | --------- | ------------ |
+| 2026-01-28T07:54:59Z | `[USER] What is 15 * 7 using the calculator?`                             | user      | 10d6a324-... |
+| 2026-01-28T07:55:02Z | `[TOOL] calculator \| Input: {"a":15,"b":7} \| Result: {"result":105}`    | tool      | 10d6a324-... |
+| 2026-01-28T07:55:05Z | `[ASSISTANT] 15 × 7 = **105**`                                            | assistant | 10d6a324-... |
+
 ## Architecture
 
 ```
@@ -40,16 +81,6 @@ _HyperDX_
                │  • HyperDX UI (:8080)       │
                └─────────────────────────────┘
 ```
-
-## What This Solves
-
-Claude Code's built-in OpenTelemetry integration doesn't capture:
-
-- User prompts
-- Agent responses
-- Tool call inputs and results
-
-This project adds custom OpenTelemetry logging to capture the complete agent trajectory, stored in ClickHouse via ClickStack.
 
 ## Setting up ClickStack
 
@@ -145,37 +176,6 @@ WHERE ServiceName = 'demo-agent'
   AND LogAttributes['role'] = 'tool'
 ORDER BY Timestamp DESC;
 ```
-
-## Captured fields (not in Claude Code built-in telemetry)
-
-### Body field (for log viewer display)
-
-The `body` field contains a human-readable summary, truncated for display:
-
-| Role      | Body Format                                                            |
-| --------- | ---------------------------------------------------------------------- |
-| user      | `[USER] <message truncated to 300 chars>`                              |
-| assistant | `[ASSISTANT] <message truncated to 300 chars>`                         |
-| tool      | `[TOOL] <name> \| Input: <json 150 chars> \| Result: <json 150 chars>` |
-
-### Attributes (for programmatic access)
-
-Full details stored in log attributes:
-
-- `role` - `user`, `assistant`, or `tool`
-- `content` - full message content (untruncated)
-- `session.id` - session ID for correlation
-- `tool.call_id`, `tool.name`, `tool.input`, `tool.result` - (tool role only)
-
-## Sample Data
-
-Sample CSV export: [docs/sample_hyperdx_search_results.csv](docs/sample_hyperdx_search_results.csv)
-
-| Timestamp            | Body                                                                      | Role      | Session ID   |
-| -------------------- | ------------------------------------------------------------------------- | --------- | ------------ |
-| 2026-01-28T07:54:59Z | `[USER] What is 15 * 7 using the calculator?`                             | user      | 10d6a324-... |
-| 2026-01-28T07:55:02Z | `[TOOL] calculator \| Input: {"a":15,"b":7} \| Result: {"result":105}`    | tool      | 10d6a324-... |
-| 2026-01-28T07:55:05Z | `[ASSISTANT] 15 × 7 = **105**`                                            | assistant | 10d6a324-... |
 
 ## Fetching Session Logs
 
