@@ -41,9 +41,9 @@ export OTEL_LOG_USER_PROMPTS=1
 claude
 ```
 
-## Logging User Prompts with Claude Agent SDK
+## Logging Full Agent Trajectory with Claude Agent SDK
 
-Claude Code's built-in telemetry doesn't include user prompt content. See `demo-agent.ts` for how to add custom OpenTelemetry logging to capture prompts.
+Claude Code's built-in telemetry doesn't include user prompts, responses, or tool call details. See `demo-agent.ts` for how to add custom OpenTelemetry logging to capture the full agent trajectory.
 
 ### Setup
 
@@ -55,7 +55,7 @@ Claude Code's built-in telemetry doesn't include user prompt content. See `demo-
 npm install
 
 # Run the demo agent (with ClickStack running)
-npm run demo "What is 2+2?"
+npm run demo "What is 15 * 7 using the calculator?"
 ```
 
 ### Key implementation details
@@ -63,29 +63,54 @@ npm run demo "What is 2+2?"
 - Uses `@opentelemetry/exporter-logs-otlp-grpc` to send logs via gRPC to port 4317
 - `OTEL_EXPORTER_OTLP_HEADERS` must be set for authentication
 - `SimpleLogRecordProcessor` sends logs immediately (no flush needed)
-- Logs include `prompt.content` and `session.id` attributes for correlation
+- All logs include `session.id` for correlation
+- Unified event type: `message` with `role` attribute (user/assistant/tool)
 
 ### Querying in ClickHouse
 
 ```sql
+-- Query all trajectory events for a session
 SELECT
   Timestamp,
-  ServiceName,
-  Body,
-  LogAttributes['prompt.content'] as prompt_content,
+  LogAttributes['role'] as role,
+  LogAttributes['content'] as content,
+  LogAttributes['session.id'] as session_id,
+  LogAttributes['tool.call_id'] as tool_call_id,
+  LogAttributes['tool.name'] as tool_name,
+  LogAttributes['tool.input'] as tool_input,
+  LogAttributes['tool.result'] as tool_result
+FROM otel_logs
+WHERE ServiceName = 'demo-agent'
+ORDER BY Timestamp DESC;
+
+-- Query by role
+SELECT
+  Timestamp,
+  LogAttributes['content'] as content,
   LogAttributes['session.id'] as session_id
 FROM otel_logs
-WHERE Body = 'user_prompt'
+WHERE ServiceName = 'demo-agent'
+  AND LogAttributes['role'] = 'assistant'
+ORDER BY Timestamp DESC;
+
+-- Query tool calls only
+SELECT
+  Timestamp,
+  LogAttributes['session.id'] as session_id,
+  LogAttributes['tool.call_id'] as tool_call_id,
+  LogAttributes['tool.name'] as tool_name,
+  LogAttributes['tool.input'] as tool_input,
+  LogAttributes['tool.result'] as tool_result
+FROM otel_logs
+WHERE ServiceName = 'demo-agent'
+  AND LogAttributes['role'] = 'tool'
 ORDER BY Timestamp DESC;
 ```
 
-## Missing fields (from Claude Code built-in telemetry)
+## Captured fields (not in Claude Code built-in telemetry)
 
-- ~~Prompt~~ ✅ Captured via demo-agent.ts
-- Response
-- Tool call results
-
-Potential solutions for remaining fields:
-
-- https://github.com/badlogic/lemmy/tree/main/apps/claude-trace
-- https://github.com/ljw1004/claude-log
+Unified `message` event with attributes:
+- `role` - `user`, `assistant`, or `tool`
+- `content` - message content
+- `session.id` - session ID for correlation
+- `tool.call_id`, `tool.name`, `tool.input`, `tool.result` - (tool role only)
