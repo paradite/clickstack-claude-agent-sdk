@@ -1,4 +1,55 @@
+# ClickStack Claude Agent SDK
+
+Full trajectory tracing for Claude Agent SDK applications. Captures prompts, responses, and tool calls that are missing from Claude Code's built-in telemetry.
+
+![Sample Screenshot](sample_screenshot.png)
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Claude Agent SDK                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌───────────────────────┐       ┌───────────────────────────────┐  │
+│  │  Built-in Telemetry   │       │    Custom OTEL Logging        │  │
+│  │  (Claude Code)        │       │    (demo-agent.ts)            │  │
+│  ├───────────────────────┤       ├───────────────────────────────┤  │
+│  │ • Token usage         │       │ • User prompts                │  │
+│  │ • Cost tracking       │       │ • Agent responses             │  │
+│  │ • Model info          │       │ • Tool calls (input + result) │  │
+│  │ • Session metadata    │       │ • Session correlation         │  │
+│  └───────────┬───────────┘       └───────────────┬───────────────┘  │
+│              │                                   │                  │
+└──────────────┼───────────────────────────────────┼──────────────────┘
+               │                                   │
+               │         OTLP gRPC (:4317)         │
+               └─────────────┬─────────────────────┘
+                             ▼
+               ┌─────────────────────────────┐
+               │    ClickStack (Docker)      │
+               ├─────────────────────────────┤
+               │  • OTEL Collector (:4317)   │
+               │  • ClickHouse (storage)     │
+               │  • HyperDX UI (:8080)       │
+               └─────────────────────────────┘
+```
+
+## What This Solves
+
+Claude Code's built-in OpenTelemetry integration doesn't capture:
+- User prompts
+- Agent responses
+- Tool call inputs and results
+
+This project adds custom OpenTelemetry logging to capture the complete agent trajectory, stored in ClickHouse via ClickStack.
+
 ## Setting up ClickStack
+
+ClickStack is an all-in-one observability stack with 3 components:
+- **ClickHouse** - Database for storing telemetry data
+- **OpenTelemetry Collector** - Receives OTLP data (port 4317 gRPC, 4318 HTTP)
+- **HyperDX** - UI for querying and visualizing data (port 8080)
 
 Docs: https://clickhouse.com/docs/use-cases/observability/clickstack/getting-started
 
@@ -13,33 +64,13 @@ docker run \
   clickhouse/clickstack-all-in-one:latest
 ```
 
+Get the Ingestion API Key from HyperDX UI: **Team Settings > Ingestion API Key**
+
 ## Claude Code config
 
+See [.env.example](.env.example) for the required environment variables.
+
 Docs: https://code.claude.com/docs/en/monitoring-usage
-
-```bash
-# 1. Enable telemetry
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-
-# 2. Choose exporters (both are optional - configure only what you need)
-export OTEL_METRICS_EXPORTER=otlp       # Options: otlp, prometheus, console
-export OTEL_LOGS_EXPORTER=otlp          # Options: otlp, console
-
-# 3. Configure OTLP endpoint (for OTLP exporter)
-export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-
-# 4. Set authentication (if required)
-export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-token"
-
-# 5. For debugging: reduce export intervals
-export OTEL_METRIC_EXPORT_INTERVAL=1000
-export OTEL_LOGS_EXPORT_INTERVAL=1000
-
-export OTEL_LOG_USER_PROMPTS=1
-# 6. Run Claude Code
-claude
-```
 
 ## Logging Full Agent Trajectory with Claude Agent SDK
 
@@ -110,7 +141,18 @@ ORDER BY Timestamp DESC;
 ## Captured fields (not in Claude Code built-in telemetry)
 
 Unified `message` event with attributes:
+
 - `role` - `user`, `assistant`, or `tool`
 - `content` - message content
 - `session.id` - session ID for correlation
 - `tool.call_id`, `tool.name`, `tool.input`, `tool.result` - (tool role only)
+
+## Sample Data
+
+Sample CSV export: [sample_hyperdx_search_results.csv](sample_hyperdx_search_results.csv)
+
+| Timestamp            | Role      | Content                                           | Session ID   |
+| -------------------- | --------- | ------------------------------------------------- | ------------ |
+| 2026-01-28T07:54:59Z | user      | What is 15 \* 7 using the calculator?             | 10d6a324-... |
+| 2026-01-28T07:55:02Z | tool      | {"result":105,"expression":"15 multiply 7 = 105"} | 10d6a324-... |
+| 2026-01-28T07:55:05Z | assistant | 15 × 7 = **105**                                  | 10d6a324-... |
