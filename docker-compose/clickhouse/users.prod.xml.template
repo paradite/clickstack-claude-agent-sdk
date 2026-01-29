@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!--
+  Production ClickHouse Users Configuration
+
+  Replace REPLACE_WITH_SHA256_HASH with actual hashes:
+    echo -n "your_password" | sha256sum | cut -d' ' -f1
+
+  Or run ./setup-prod.sh to generate automatically.
+-->
+<clickhouse>
+    <profiles>
+        <default>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>in_order</load_balancing>
+            <log_queries>1</log_queries>
+        </default>
+    </profiles>
+
+    <users>
+        <!-- Default user - required by ClickHouse, disabled for external access -->
+        <default>
+            <password_sha256_hex>REPLACE_WITH_SHA256_HASH</password_sha256_hex>
+            <profile>default</profile>
+            <networks>
+                <ip>127.0.0.1</ip>
+                <ip>::1</ip>
+            </networks>
+            <quota>default</quota>
+        </default>
+
+        <!-- Main user for HyperDX app and admin access -->
+        <clickstack>
+            <password_sha256_hex>REPLACE_WITH_SHA256_HASH</password_sha256_hex>
+            <profile>default</profile>
+            <networks>
+                <ip>127.0.0.1</ip>
+                <ip>::1</ip>
+                <ip>172.16.0.0/12</ip>
+            </networks>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </clickstack>
+
+        <!-- Worker user for OTEL collector data ingestion -->
+        <worker>
+            <password_sha256_hex>REPLACE_WITH_SHA256_HASH</password_sha256_hex>
+            <profile>default</profile>
+            <networks>
+                <ip>127.0.0.1</ip>
+                <ip>::1</ip>
+                <ip>172.16.0.0/12</ip>
+            </networks>
+            <quota>default</quota>
+        </worker>
+    </users>
+
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+</clickhouse>

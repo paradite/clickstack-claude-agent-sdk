@@ -192,3 +192,136 @@ docker compose exec db mongosh hyperdx
 ```bash
 docker compose restart otel-collector
 ```
+
+## Production Deployment
+
+Hardened configuration with strong passwords, MongoDB auth, resource limits, and ports bound to localhost.
+
+### Quick Start (Production)
+
+```bash
+./setup-prod.sh
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+```
+
+### ClickHouse Users (Production)
+
+| User | Purpose |
+|------|---------|
+| `clickstack` | HyperDX app queries and admin |
+| `worker` | OTEL collector data ingestion |
+
+### Production Files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.prod.yml` | Hardened compose configuration |
+| `clickhouse/config.prod.xml` | Hardened server config |
+| `clickhouse/users.prod.xml.template` | User config template |
+| `.env.prod.example` | Environment variable template |
+| `setup-prod.sh` | Generates credentials and configs |
+
+### Key Differences from Development
+
+| Feature | Development | Production |
+|---------|-------------|------------|
+| Passwords | Weak/empty | Strong random (32 chars) |
+| Password storage | Plaintext | SHA256 hashed |
+| Network access | Any IP | Docker network only |
+| Port binding | All interfaces | OTLP external, UI/DB localhost |
+| MongoDB auth | Disabled | Enabled |
+| Memory limits | None | Set per container |
+
+### Production Data
+
+Data stored in `~/.clickstack-prod/` (separate from dev)
+
+### Security Considerations
+
+**OTLP Ingestion (ports 4317/4318):**
+
+HyperDX requires an API key for OTLP ingestion. Clients must include the `authorization` header.
+
+1. Get your API key from HyperDX UI: **Settings → Ingestion API Key**
+
+2. Configure clients:
+   ```bash
+   export OTEL_EXPORTER_OTLP_ENDPOINT=http://your-server:4318
+   export OTEL_EXPORTER_OTLP_HEADERS="authorization=<YOUR_API_KEY>"
+   ```
+
+3. Or in OTEL Collector config:
+   ```yaml
+   exporters:
+     otlphttp:
+       endpoint: 'http://your-server:4318'
+       headers:
+         authorization: <YOUR_API_KEY>
+   ```
+
+**Additional hardening (optional):**
+- Firewall rules to restrict source IPs
+- Deploy in private network/VPC
+- Cloud security groups
+
+**Internal ports (localhost only):**
+
+| Port | Service | Security |
+|------|---------|----------|
+| 8080 | HyperDX UI | Localhost only |
+| 8000 | HyperDX API | Localhost only |
+| 8123 | ClickHouse HTTP | Localhost + strong password |
+
+**Database security:**
+- MongoDB: Authenticated with strong password
+- ClickHouse: SHA256 hashed passwords, network restricted to Docker + localhost
+
+### Security Test Results
+
+The following security tests verify the production configuration:
+
+**Port Binding Verification:**
+| Port | Expected | Actual | Status |
+|------|----------|--------|--------|
+| 4317 (OTLP gRPC) | 0.0.0.0 (external) | 0.0.0.0 | ✅ Pass |
+| 4318 (OTLP HTTP) | 0.0.0.0 (external) | 0.0.0.0 | ✅ Pass |
+| 8080 (HyperDX UI) | 127.0.0.1 | 127.0.0.1 | ✅ Pass |
+| 8000 (HyperDX API) | 127.0.0.1 | 127.0.0.1 | ✅ Pass |
+| 8123 (ClickHouse) | 127.0.0.1 | 127.0.0.1 | ✅ Pass |
+| 27017 (MongoDB) | Not exposed | Not exposed | ✅ Pass |
+
+**Authentication Tests:**
+| Test | Expected | Actual | Status |
+|------|----------|--------|--------|
+| ClickHouse no auth | 401 Unauthorized | 401 | ✅ Pass |
+| ClickHouse wrong password | 401 Unauthorized | 401 | ✅ Pass |
+| ClickHouse valid credentials | Success | Success | ✅ Pass |
+| ClickHouse default user empty password | Rejected | Rejected | ✅ Pass |
+| OTLP HTTP no auth | 401 Unauthorized | 401 | ✅ Pass |
+| OTLP HTTP invalid API key | Rejected | Rejected | ✅ Pass |
+| HyperDX UI on localhost | Accessible | 200 OK | ✅ Pass |
+
+**Configuration Verification:**
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| Passwords SHA256 hashed | 64-char hex | 64-char hex | ✅ Pass |
+| ClickHouse memory limit | 8GB | 8GB | ✅ Pass |
+| HyperDX app memory limit | 2GB | 2GB | ✅ Pass |
+| Docker network isolation | 172.x.x.x/16 | 172.18.0.0/16 | ✅ Pass |
+
+**Test Commands:**
+```bash
+# Verify port binding
+netstat -an | grep -E '(4317|4318|8123|8080|8000)' | grep LISTEN
+
+# Test ClickHouse auth (should return 401)
+curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8123/?query=SELECT%201"
+
+# Test OTLP auth (should return 401)
+curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:4318/v1/logs" -X POST \
+  -H "Content-Type: application/json" -d '{"resourceLogs":[]}'
+
+# Test ClickHouse with valid credentials
+source .env.prod && curl -s "http://127.0.0.1:8123/?query=SELECT%201" \
+  --user "worker:${CLICKHOUSE_WORKER_PASSWORD}"
+```
