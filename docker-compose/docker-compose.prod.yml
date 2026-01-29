@@ -1,0 +1,193 @@
+name: clickstack-prod
+
+services:
+  # MongoDB - Application state storage
+  db:
+    image: mongo:5.0.32-focal
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - ~/.clickstack-prod/mongo:/data/db
+    networks:
+      - clickstack-internal
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "${MONGO_ROOT_USERNAME}", "-p", "${MONGO_ROOT_PASSWORD}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+
+  # ClickHouse - Telemetry data storage
+  ch-server:
+    image: clickhouse/clickhouse-server:25.6-alpine
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 0
+    volumes:
+      - ./clickhouse/config.prod.xml:/etc/clickhouse-server/config.xml:ro
+      - ./clickhouse/users.prod.xml:/etc/clickhouse-server/users.xml:ro
+      - ~/.clickstack-prod/clickhouse/data:/var/lib/clickhouse
+      - ~/.clickstack-prod/clickhouse/logs:/var/log/clickhouse-server
+    ports:
+      - "127.0.0.1:8123:8123"
+    networks:
+      - clickstack-internal
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "worker", "--password", "${CLICKHOUSE_WORKER_PASSWORD}", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    restart: unless-stopped
+
+  # OpenTelemetry Collector - Data ingestion
+  otel-collector:
+    image: docker.clickhouse.com/clickhouse/clickstack-otel-collector:${IMAGE_VERSION}
+    environment:
+      CLICKHOUSE_ENDPOINT: "tcp://ch-server:9000?dial_timeout=10s&username=worker&password=${CLICKHOUSE_WORKER_PASSWORD}"
+      HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE: ${HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE}
+      HYPERDX_LOG_LEVEL: ${HYPERDX_LOG_LEVEL}
+      OPAMP_SERVER_URL: "http://app:${HYPERDX_OPAMP_PORT}"
+      CUSTOM_OTELCOL_CONFIG_FILE: /etc/otel-custom/custom-config.yaml
+    volumes:
+      - ./otel-collector/custom-config.yaml:/etc/otel-custom/custom-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC - external ingestion
+      - "4318:4318"   # OTLP HTTP - external ingestion
+    networks:
+      - clickstack-internal
+    depends_on:
+      ch-server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+
+  # HyperDX App - Web UI and API
+  app:
+    image: docker.hyperdx.io/hyperdx/hyperdx:${IMAGE_VERSION}
+    environment:
+      FRONTEND_URL: "${HYPERDX_APP_URL}:${HYPERDX_APP_PORT}"
+      HYPERDX_API_PORT: ${HYPERDX_API_PORT}
+      HYPERDX_APP_PORT: ${HYPERDX_APP_PORT}
+      HYPERDX_APP_URL: ${HYPERDX_APP_URL}
+      HYPERDX_LOG_LEVEL: ${HYPERDX_LOG_LEVEL}
+      MONGO_URI: "mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@db:27017/hyperdx?authSource=admin"
+      SERVER_URL: "http://127.0.0.1:${HYPERDX_API_PORT}"
+      OPAMP_PORT: ${HYPERDX_OPAMP_PORT}
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_SERVICE_NAME: "hdx-oss-app"
+      DEFAULT_CONNECTIONS: '[{"name":"Local ClickHouse","host":"http://ch-server:8123","username":"${CLICKHOUSE_USER}","password":"${CLICKHOUSE_PASSWORD}"}]'
+      DEFAULT_SOURCES: >-
+        [
+          {
+            "from":{"databaseName":"default","tableName":"otel_logs"},
+            "kind":"log",
+            "timestampValueExpression":"TimestampTime",
+            "name":"Logs",
+            "displayedTimestampValueExpression":"Timestamp",
+            "implicitColumnExpression":"Body",
+            "serviceNameExpression":"ServiceName",
+            "bodyExpression":"Body",
+            "eventAttributesExpression":"LogAttributes",
+            "resourceAttributesExpression":"ResourceAttributes",
+            "defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body",
+            "severityTextExpression":"SeverityText",
+            "traceIdExpression":"TraceId",
+            "spanIdExpression":"SpanId",
+            "connection":"Local ClickHouse",
+            "traceSourceId":"Traces",
+            "sessionSourceId":"Sessions",
+            "metricSourceId":"Metrics"
+          },
+          {
+            "from":{"databaseName":"default","tableName":"otel_traces"},
+            "kind":"trace",
+            "timestampValueExpression":"Timestamp",
+            "name":"Traces",
+            "displayedTimestampValueExpression":"Timestamp",
+            "implicitColumnExpression":"SpanName",
+            "serviceNameExpression":"ServiceName",
+            "bodyExpression":"SpanName",
+            "eventAttributesExpression":"SpanAttributes",
+            "resourceAttributesExpression":"ResourceAttributes",
+            "defaultTableSelectExpression":"Timestamp,ServiceName,StatusCode,round(Duration/1e6),SpanName",
+            "traceIdExpression":"TraceId",
+            "spanIdExpression":"SpanId",
+            "durationExpression":"Duration",
+            "durationPrecision":9,
+            "parentSpanIdExpression":"ParentSpanId",
+            "spanNameExpression":"SpanName",
+            "spanKindExpression":"SpanKind",
+            "statusCodeExpression":"StatusCode",
+            "statusMessageExpression":"StatusMessage",
+            "connection":"Local ClickHouse",
+            "logSourceId":"Logs",
+            "sessionSourceId":"Sessions",
+            "metricSourceId":"Metrics"
+          },
+          {
+            "from":{"databaseName":"default","tableName":""},
+            "kind":"metric",
+            "timestampValueExpression":"TimeUnix",
+            "name":"Metrics",
+            "resourceAttributesExpression":"ResourceAttributes",
+            "metricTables":{
+              "gauge":"otel_metrics_gauge",
+              "histogram":"otel_metrics_histogram",
+              "sum":"otel_metrics_sum"
+            },
+            "connection":"Local ClickHouse",
+            "logSourceId":"Logs",
+            "traceSourceId":"Traces",
+            "sessionSourceId":"Sessions"
+          },
+          {
+            "from":{"databaseName":"default","tableName":"hyperdx_sessions"},
+            "kind":"session",
+            "timestampValueExpression":"TimestampTime",
+            "name":"Sessions",
+            "displayedTimestampValueExpression":"Timestamp",
+            "implicitColumnExpression":"Body",
+            "serviceNameExpression":"ServiceName",
+            "bodyExpression":"Body",
+            "eventAttributesExpression":"LogAttributes",
+            "resourceAttributesExpression":"ResourceAttributes",
+            "defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body",
+            "severityTextExpression":"SeverityText",
+            "traceIdExpression":"TraceId",
+            "spanIdExpression":"SpanId",
+            "connection":"Local ClickHouse",
+            "logSourceId":"Logs",
+            "traceSourceId":"Traces",
+            "metricSourceId":"Metrics"
+          }
+        ]
+    ports:
+      - "127.0.0.1:${HYPERDX_API_PORT}:${HYPERDX_API_PORT}"
+      - "127.0.0.1:${HYPERDX_APP_PORT}:${HYPERDX_APP_PORT}"
+    networks:
+      - clickstack-internal
+    depends_on:
+      ch-server:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+
+networks:
+  clickstack-internal:
+    driver: bridge

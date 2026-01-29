@@ -1,3 +1,8 @@
 .volumes
 .env.local
 node_modules
+
+# Production credentials (never commit)
+docker-compose/.env.prod
+docker-compose/clickhouse/users.prod.xml
+!docker-compose/clickhouse/users.prod.xml.template
