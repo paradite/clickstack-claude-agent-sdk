@@ -54,11 +54,25 @@ npm run demo "Your prompt here"
 
 ## Infrastructure
 
-ClickStack runs via Docker (`run.sh`):
+Two deployment options:
+
+**Option 1: All-in-One (`run.sh`)** - Single container, quick start
+```bash
+./run.sh
+```
+
+**Option 2: Docker Compose (`docker-compose/`)** - Separate services, better for debugging
+```bash
+cd docker-compose && docker compose up -d
+```
+
+Both expose the same ports:
 - Port 8080: HyperDX UI
 - Port 8123: ClickHouse HTTP (for Telescope)
-- Port 4317: OTLP gRPC (logs)
-- Port 4318: OTLP HTTP (metrics)
+- Port 4317: OTLP gRPC (logs/traces/metrics)
+- Port 4318: OTLP HTTP (logs/traces/metrics)
+
+Docker Compose includes a custom OTEL config (`otel-collector/custom-config.yaml`) that enables OTLP receivers - the default HyperDX config defines OTLP but doesn't wire it to pipelines.
 
 Telescope runs via Docker (`run-telescope.sh`):
 - Port 9898: Telescope UI
