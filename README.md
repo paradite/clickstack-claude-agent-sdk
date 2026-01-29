@@ -84,13 +84,22 @@ Sample CSV export: [docs/sample_hyperdx_search_results.csv](docs/sample_hyperdx_
 
 ## Setting up ClickStack
 
-ClickStack is an all-in-one observability stack with 3 components:
+ClickStack is an all-in-one observability stack with 4 components:
 
 - **ClickHouse** - Database for storing telemetry data
 - **OpenTelemetry Collector** - Receives OTLP data (port 4317 gRPC, 4318 HTTP)
 - **HyperDX** - UI for querying and visualizing data (port 8080)
+- **MongoDB** - Application state (dashboards, alerts, users)
 
 Docs: https://clickhouse.com/docs/use-cases/observability/clickstack/getting-started
+
+### Option 1: All-in-One Image (Quick Start)
+
+```bash
+./run.sh
+```
+
+Or manually:
 
 ```bash
 docker run \
@@ -102,6 +111,35 @@ docker run \
   -v "$(pwd)/.volumes/ch_logs:/var/log/clickhouse-server" \
   clickhouse/clickstack-all-in-one:latest
 ```
+
+### Option 2: Docker Compose (Recommended)
+
+The Docker Compose setup runs each component in a separate container, providing better isolation, easier debugging, and the ability to customize individual services.
+
+```bash
+cd docker-compose
+docker compose up -d
+```
+
+**Key benefits:**
+- Isolated restarts - restart only the problematic service
+- Independent logs - each service has its own log stream
+- Customizable configs - modify ClickHouse or OTEL collector settings
+- Version control - pin specific versions per component
+
+**OTLP Support:** The Docker Compose setup includes a custom OTEL collector config (`otel-collector/custom-config.yaml`) that properly wires OTLP receivers to pipelines. This is necessary because HyperDX's default config defines OTLP receivers but doesn't connect them to the processing pipelines.
+
+See [docker-compose/README.md](docker-compose/README.md) for full documentation.
+
+### Ports
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 8080 | HyperDX | Web UI |
+| 8000 | HyperDX | API (Docker Compose only) |
+| 4317 | OTLP | gRPC endpoint |
+| 4318 | OTLP | HTTP endpoint |
+| 8123 | ClickHouse | HTTP interface |
 
 Get the Ingestion API Key from HyperDX UI: **Team Settings > Ingestion API Key**
 

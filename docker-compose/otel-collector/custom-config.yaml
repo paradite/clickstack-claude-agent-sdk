@@ -1,0 +1,34 @@
+# Custom OTEL Collector config to enable OTLP receivers in pipelines
+# This overrides the default HyperDX OpAMP config that defines OTLP receivers
+# but does not connect them to any pipelines.
+
+service:
+  pipelines:
+    # Add OTLP receiver to logs pipeline
+    logs/in:
+      receivers:
+        - fluentforward
+        - otlp/hyperdx
+      exporters:
+        - routing/logs
+
+    # Add OTLP receiver to traces pipeline (replacing nop)
+    traces:
+      receivers:
+        - otlp/hyperdx
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - clickhouse
+
+    # Add OTLP receiver to metrics pipeline
+    metrics:
+      receivers:
+        - prometheus
+        - otlp/hyperdx
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - clickhouse
